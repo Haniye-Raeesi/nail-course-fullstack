@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NailCourse.Api/NailCourse.Api.csproj" />
+    <Project Path="src/NailCourse.Application/NailCourse.Application.csproj" />
+    <Project Path="src/NailCourse.Domain/NailCourse.Domain.csproj" />
+    <Project Path="src/NailCourse.Infrastructure/NailCourse.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NailCourse.UnitTests/NailCourse.UnitTests.csproj" />
+  </Folder>
+</Solution>
