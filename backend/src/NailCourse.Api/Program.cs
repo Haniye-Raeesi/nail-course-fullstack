@@ -8,6 +8,8 @@ using System.Text;
 using NailCourse.Application.Interfaces;
 using NailCourse.Infrastructure.Services;
 using System.Security.Claims;
+using Microsoft.OpenApi;
+using NailCourse.Application.Services;
 
 
 
@@ -29,7 +31,8 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddScoped<IPaymentService, ZarinpalPaymentService>();
 builder.Services.AddHttpClient<ZarinpalPaymentService>();
-
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<ISpotPlayerService, SpotPlayerService>();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -84,7 +87,23 @@ builder.Services
         };
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "JWT Authorization header using the Bearer scheme."
+    });
+
+    options.AddSecurityRequirement(document =>
+        new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("bearer", document)] = []
+        });
+});
 
 var app = builder.Build();
 

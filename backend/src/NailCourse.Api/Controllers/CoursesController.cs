@@ -23,7 +23,7 @@ public class CoursesController : ControllerBase
         _userManager = userManager;
     }
 
-    [HttpGet]
+
 [HttpGet]
 public async Task<IActionResult> GetCourses()
 {
@@ -59,7 +59,56 @@ public async Task<IActionResult> GetCourses()
 
     return Ok(courses);
 }
+[HttpGet("my")]
+[Authorize(Roles = "Teacher,Admin")]
+public async Task<IActionResult> GetMyCourses()
+{
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+    if (userId == null)
+        return Unauthorized();
+
+    IQueryable<Course> query = _context.Courses
+        .AsNoTracking()
+        .Include(x => x.Category)
+        .Include(x => x.Lessons);
+
+    if (!User.IsInRole("Admin"))
+    {
+        query = query.Where(x => x.TeacherId == userId);
+    }
+
+    var courses = await query
+        .OrderByDescending(x => x.CreatedAt)
+        .Select(x => new
+        {
+            x.Id,
+            x.Title,
+            x.Slug,
+            x.Description,
+            x.Price,
+            x.ThumbnailUrl,
+            x.IsPublished,
+
+            Category = new
+            {
+                x.Category.Id,
+                x.Category.Name,
+                x.Category.Slug
+            },
+
+            LessonsCount = x.Lessons.Count,
+
+            DurationInMinutes = x.Lessons
+                .Sum(l => l.DurationInMinutes),
+
+            x.CreatedAt,
+            x.UpdatedAt
+        })
+        .ToListAsync();
+
+    return Ok(courses);
+}
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetCourse(Guid id)
     {

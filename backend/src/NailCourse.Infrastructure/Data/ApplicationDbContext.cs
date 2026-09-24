@@ -18,6 +18,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<Order> Orders => Set<Order>();
+    public DbSet<SpotPlayerLicense> SpotPlayerLicenses => Set<SpotPlayerLicense>();
 
 public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
@@ -96,6 +97,38 @@ builder.Entity<Payment>(entity =>
         x.CourseId
     })
     .IsUnique();
+});
+
+builder.Entity<SpotPlayerLicense>(entity =>
+{
+    entity.HasKey(x => x.Id);
+
+    entity.Property(x => x.SpotPlayerLicenseId)
+        .IsRequired()
+        .HasMaxLength(200);
+
+    entity.Property(x => x.LicenseKey)
+        .IsRequired()
+        .HasMaxLength(500);
+
+    entity.Property(x => x.LicenseUrl)
+        .HasMaxLength(1000);
+
+    entity.Property(x => x.Payload)
+        .HasMaxLength(1000);
+
+    entity.HasOne(x => x.Course)
+        .WithMany()
+        .HasForeignKey(x => x.CourseId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasOne(x => x.Enrollment)
+        .WithOne(x => x.SpotPlayerLicense)
+        .HasForeignKey<SpotPlayerLicense>(x => x.EnrollmentId)
+        .OnDelete(DeleteBehavior.SetNull);
+
+    entity.HasIndex(x => x.SpotPlayerLicenseId)
+        .IsUnique();
 });
 
         builder.Entity<Course>(entity =>

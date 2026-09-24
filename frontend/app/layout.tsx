@@ -10,12 +10,56 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("http://localhost:3000"),
+
   title: {
     default: "NailCourse | آموزش حرفه‌ای ناخن",
     template: "%s | NailCourse",
   },
+
   description:
-    "آموزش حرفه‌ای کاشت، طراحی و مهارت‌های تخصصی ناخن",
+    "NailCourse پلتفرم آموزش حرفه‌ای ناخن، کاشت، طراحی و مهارت‌های تخصصی ناخن.",
+
+  keywords: [
+    "آموزش ناخن",
+    "آموزش کاشت ناخن",
+    "آموزش طراحی ناخن",
+    "دوره آموزش ناخن",
+    "NailCourse",
+  ],
+
+  authors: [
+    {
+      name: "NailCourse",
+    },
+  ],
+
+  creator: "NailCourse",
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+
+  openGraph: {
+    type: "website",
+    locale: "fa_IR",
+    siteName: "NailCourse",
+    title: "NailCourse | آموزش حرفه‌ای ناخن",
+    description:
+      "آموزش حرفه‌ای کاشت، طراحی و مهارت‌های تخصصی ناخن",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "NailCourse | آموزش حرفه‌ای ناخن",
+    description:
+      "آموزش حرفه‌ای کاشت، طراحی و مهارت‌های تخصصی ناخن",
+  },
 };
 
 export default function RootLayout({
@@ -26,10 +70,10 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body className={vazirmatn.variable}>
-  <CartProvider>
-    <MainLayout>{children}</MainLayout>
-  </CartProvider>
-</body>
+        <CartProvider>
+          <MainLayout>{children}</MainLayout>
+        </CartProvider>
+      </body>
     </html>
   );
 }

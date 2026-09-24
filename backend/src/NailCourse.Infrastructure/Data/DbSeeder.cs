@@ -159,7 +159,7 @@ public static class DbSeeder
                 Description = "آشنایی با مسیر دوره و ابزارهای اصلی.",
                 Order = 1,
                 DurationInMinutes = 15,
-                VideoId = null,
+                VideoId = "test-video-001",
                 IsFree = true,
                 CreatedAt = DateTime.UtcNow
             },

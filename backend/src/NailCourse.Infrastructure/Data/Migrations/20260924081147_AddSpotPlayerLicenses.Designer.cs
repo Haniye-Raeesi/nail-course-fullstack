@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NailCourse.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using NailCourse.Infrastructure.Data;
 namespace NailCourse.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924081147_AddSpotPlayerLicenses")]
+    partial class AddSpotPlayerLicenses
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -468,36 +471,25 @@ namespace NailCourse.Infrastructure.Data.Migrations
 
                     b.Property<string>("LicenseKey")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LicenseUrl")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("OrderId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Payload")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SpotPlayerLicenseId")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
-
-                    b.HasIndex("EnrollmentId")
-                        .IsUnique()
-                        .HasFilter("[EnrollmentId] IS NOT NULL");
-
-                    b.HasIndex("SpotPlayerLicenseId")
-                        .IsUnique();
 
                     b.ToTable("SpotPlayerLicenses");
                 });
@@ -705,17 +697,10 @@ namespace NailCourse.Infrastructure.Data.Migrations
                     b.HasOne("NailCourse.Domain.Entities.Course", "Course")
                         .WithMany()
                         .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NailCourse.Domain.Entities.Enrollment", "Enrollment")
-                        .WithOne("SpotPlayerLicense")
-                        .HasForeignKey("NailCourse.Domain.Entities.SpotPlayerLicense", "EnrollmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Course");
-
-                    b.Navigation("Enrollment");
                 });
 
             modelBuilder.Entity("NailCourse.Domain.Entities.Category", b =>
@@ -726,11 +711,6 @@ namespace NailCourse.Infrastructure.Data.Migrations
             modelBuilder.Entity("NailCourse.Domain.Entities.Course", b =>
                 {
                     b.Navigation("Lessons");
-                });
-
-            modelBuilder.Entity("NailCourse.Domain.Entities.Enrollment", b =>
-                {
-                    b.Navigation("SpotPlayerLicense");
                 });
 
             modelBuilder.Entity("NailCourse.Domain.Entities.Order", b =>
