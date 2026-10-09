@@ -78,7 +78,6 @@ type Student = {
   user?: { email: string; firstName: string; lastName: string };
 };
 
-
 export default function TeacherPanel() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [tab, setTab] = useState("overview");
@@ -90,6 +89,7 @@ export default function TeacherPanel() {
   const [selected, setSelected] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [showCourse, setShowCourse] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -145,6 +145,9 @@ export default function TeacherPanel() {
     await apiFetch(`/teacher/courses/${id}`, { method: "DELETE" });
     await load();
     setMessage("دوره با موفقیت از انتشار خارج شد.");
+  }
+  function editCourse(course: Course) {
+    setEditingCourse(course);
   }
   if (allowed === null)
     return (
@@ -202,6 +205,7 @@ export default function TeacherPanel() {
               onAdd={() => setShowCourse(true)}
               onOpen={openCourse}
               onArchive={archive}
+              onEdit={editCourse}
             />
           )}
           {tab === "lessons" && (
@@ -226,6 +230,18 @@ export default function TeacherPanel() {
             setShowCourse(false);
             await load();
             setMessage("دوره ایجاد شد.");
+          }}
+        />
+      )}
+      {editingCourse && (
+        <EditCourseModal
+          course={editingCourse}
+          categories={categories}
+          onClose={() => setEditingCourse(null)}
+          onSaved={async () => {
+            setEditingCourse(null);
+            await load();
+            setMessage("تغییرات دوره با موفقیت ذخیره شد.");
           }}
         />
       )}
@@ -345,11 +361,13 @@ function Courses({
   onAdd,
   onOpen,
   onArchive,
+  onEdit,
 }: {
   courses: Course[];
   onAdd: () => void;
   onOpen: (c: Course) => void;
   onArchive: (id: string) => void;
+  onEdit: (c: Course) => void;
 }) {
   return (
     <div>
@@ -398,13 +416,21 @@ function Courses({
                     </span>
                   </td>
                   <td>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => onOpen(c)}
                         className="rounded-full bg-[#f4ece6] px-3 py-2 text-xs font-bold"
                       >
                         مدیریت محتوا
                       </button>
+
+                      <button
+                        onClick={() => onEdit(c)}
+                        className="rounded-full bg-[#b78b72] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#8d6a55]"
+                      >
+                        ویرایش دوره
+                      </button>
+
                       {c.isPublished && (
                         <button
                           onClick={() => onArchive(c.id)}
@@ -602,6 +628,138 @@ function CourseModal({
     </Modal>
   );
 }
+
+function EditCourseModal({
+  course,
+  categories,
+  onClose,
+  onSaved,
+}: {
+  course: Course;
+  categories: Category[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [f, setF] = useState({
+    categoryId: course.category?.id ?? "",
+    title: course.title,
+    slug: course.slug,
+    description: course.description ?? "",
+    price: String(course.price),
+    thumbnailUrl: course.thumbnailUrl ?? "",
+    isPublished: course.isPublished,
+  });
+
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setErr("");
+    setSaving(true);
+
+    try {
+      await apiFetch(`/Courses/${course.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          categoryId: f.categoryId,
+          title: f.title.trim(),
+          slug: f.slug.trim(),
+          description: f.description.trim(),
+          price: Number(f.price),
+          thumbnailUrl: f.thumbnailUrl.trim() || null,
+          isPublished: f.isPublished,
+        }),
+      });
+
+      onSaved();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "خطا در ویرایش دوره");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title="ویرایش دوره" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <Input
+          label="عنوان دوره"
+          value={f.title}
+          onChange={(v) => setF({ ...f, title: v })}
+          required
+        />
+
+        <Input
+          label="Slug انگلیسی"
+          value={f.slug}
+          onChange={(v) => setF({ ...f, slug: v })}
+          required
+        />
+
+        <label className="block text-sm font-bold">
+          دسته‌بندی
+          <select
+            required
+            className="mt-2 w-full rounded-xl border p-3 font-normal"
+            value={f.categoryId}
+            onChange={(e) => setF({ ...f, categoryId: e.target.value })}
+          >
+            <option value="">انتخاب دسته‌بندی</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <Input
+          label="قیمت (تومان)"
+          type="number"
+          value={f.price}
+          onChange={(v) => setF({ ...f, price: v })}
+          required
+        />
+
+        <Input
+          label="آدرس تصویر"
+          value={f.thumbnailUrl}
+          onChange={(v) => setF({ ...f, thumbnailUrl: v })}
+        />
+
+        <label className="block text-sm font-bold">
+          توضیحات دوره
+          <textarea
+            className="mt-2 min-h-28 w-full rounded-xl border p-3 font-normal"
+            value={f.description}
+            onChange={(e) => setF({ ...f, description: e.target.value })}
+          />
+        </label>
+
+        <label className="flex items-center gap-2 text-sm font-bold">
+          <input
+            type="checkbox"
+            checked={f.isPublished}
+            onChange={(e) => setF({ ...f, isPublished: e.target.checked })}
+          />
+          انتشار دوره
+        </label>
+
+        {err && <p className="text-sm text-red-600">{err}</p>}
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full rounded-full bg-[#b78b72] py-3 font-black text-white transition hover:bg-[#8d6a55] disabled:opacity-60"
+        >
+          {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
+        </button>
+      </form>
+    </Modal>
+  );
+}
+
 function LessonModal({
   courseId,
   nextOrder,
