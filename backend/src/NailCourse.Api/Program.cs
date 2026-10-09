@@ -30,6 +30,7 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddScoped<IPaymentService, ZarinpalPaymentService>();
+builder.Services.AddScoped<IOrderCompletionService, OrderCompletionService>();
 builder.Services.AddHttpClient<ZarinpalPaymentService>();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ISpotPlayerService, SpotPlayerService>();

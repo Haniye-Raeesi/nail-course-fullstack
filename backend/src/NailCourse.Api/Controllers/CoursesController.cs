@@ -22,7 +22,47 @@ public class CoursesController : ControllerBase
         _context = context;
         _userManager = userManager;
     }
+[HttpGet("enrolled")]
+[Authorize]
+public async Task<IActionResult> GetEnrolledCourses()
+{
+    var userId = User.FindFirstValue(
+        ClaimTypes.NameIdentifier
+    );
 
+    if (string.IsNullOrWhiteSpace(userId))
+        return Unauthorized();
+
+    var courses = await _context.Enrollments
+        .AsNoTracking()
+        .Where(x =>
+            x.UserId == userId &&
+            x.IsActive)
+        .Include(x => x.Course)
+        .ThenInclude(x => x.Category)
+        .Select(x => new
+        {
+            id = x.Course.Id,
+            title = x.Course.Title,
+            slug = x.Course.Slug,
+            description = x.Course.Description,
+            price = x.Course.Price,
+            thumbnailUrl = x.Course.ThumbnailUrl,
+            progress = x.Progress,
+            enrolledAt = x.EnrolledAt,
+
+            category = new
+            {
+                id = x.Course.Category.Id,
+                name = x.Course.Category.Name,
+                slug = x.Course.Category.Slug
+            }
+        })
+        .OrderByDescending(x => x.enrolledAt)
+        .ToListAsync();
+
+    return Ok(courses);
+}
 
 [HttpGet]
 public async Task<IActionResult> GetCourses()

@@ -16,7 +16,7 @@ public class SpotPlayerService : ISpotPlayerService
     }
 
     public async Task<SpotPlayerLicense> CreateLicenseAsync(
-        Guid courseId,
+        Course course,
         string customerName,
         string? payload = null,
         bool test = true)
@@ -24,15 +24,16 @@ public class SpotPlayerService : ISpotPlayerService
         var apiKey = _configuration["SpotPlayer:ApiKey"];
 
         if (string.IsNullOrWhiteSpace(apiKey))
+        {
             throw new InvalidOperationException(
                 "SpotPlayer API Key is not configured.");
+        }
 
-        var spotCourseId =
-            _configuration["SpotPlayer:CourseId"];
-
-        if (string.IsNullOrWhiteSpace(spotCourseId))
+        if (string.IsNullOrWhiteSpace(course.SpotPlayerCourseId))
+        {
             throw new InvalidOperationException(
-                "SpotPlayer CourseId is not configured.");
+                $"SpotPlayer Course ID is not configured for course '{course.Title}'.");
+        }
 
         using var client = new HttpClient();
 
@@ -49,7 +50,7 @@ public class SpotPlayerService : ISpotPlayerService
 
             course = new[]
             {
-                spotCourseId
+                course.SpotPlayerCourseId
             },
 
             name = customerName,
@@ -88,8 +89,7 @@ public class SpotPlayerService : ISpotPlayerService
 
         var response = await client.SendAsync(request);
 
-        var result =
-            await response.Content.ReadAsStringAsync();
+        var result = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
         {
@@ -97,13 +97,12 @@ public class SpotPlayerService : ISpotPlayerService
                 $"SpotPlayer API error: {result}");
         }
 
-        var data =
-            JsonSerializer.Deserialize<SpotPlayerResponse>(
-                result,
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+        var data = JsonSerializer.Deserialize<SpotPlayerResponse>(
+            result,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
 
         if (data == null ||
             string.IsNullOrWhiteSpace(data.Id) ||
@@ -115,7 +114,7 @@ public class SpotPlayerService : ISpotPlayerService
 
         return new SpotPlayerLicense
         {
-            CourseId = courseId,
+            CourseId = course.Id,
             SpotPlayerLicenseId = data.Id,
             LicenseKey = data.Key,
             LicenseUrl = data.Url ?? string.Empty,
@@ -125,14 +124,14 @@ public class SpotPlayerService : ISpotPlayerService
     }
 
     private class SpotPlayerResponse
-{
-    [System.Text.Json.Serialization.JsonPropertyName("_id")]
-    public string Id { get; set; } = string.Empty;
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("_id")]
+        public string Id { get; set; } = string.Empty;
 
-    [System.Text.Json.Serialization.JsonPropertyName("key")]
-    public string Key { get; set; } = string.Empty;
+        [System.Text.Json.Serialization.JsonPropertyName("key")]
+        public string Key { get; set; } = string.Empty;
 
-    [System.Text.Json.Serialization.JsonPropertyName("url")]
-    public string? Url { get; set; }
-}
+        [System.Text.Json.Serialization.JsonPropertyName("url")]
+        public string? Url { get; set; }
+    }
 }

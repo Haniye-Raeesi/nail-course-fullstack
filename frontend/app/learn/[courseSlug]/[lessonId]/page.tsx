@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Clock3, LockKeyhole } from "lucide-react";
-
 import { apiFetch } from "@/lib/api";
-import SpotPlayerFrame from "@/components/learning/SpotPlayerFrame";
+import SpotPlayerLicense from "@/components/learning/SpotPlayerLicense";
 
 type Course = {
   id: string;
@@ -53,6 +52,7 @@ export default function LessonPage() {
 
   const [data, setData] = useState<LearningResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -97,19 +97,22 @@ export default function LessonPage() {
     );
   }
 
-  if (!data) {
-    return (
-      <main
-        dir="rtl"
-        className="min-h-screen bg-[#f8f4ef] px-5 py-24 text-center"
-      >
-        <h1 className="text-2xl font-black">جلسه پیدا نشد</h1>
-        <p className="mt-3 text-[#716760]">
-          دسترسی به اطلاعات جلسه امکان‌پذیر نیست.
-        </p>
-      </main>
-    );
-  }
+if (!data) {
+  return (
+    <main
+      dir="rtl"
+      className="min-h-screen bg-[#f8f4ef] px-5 py-24 text-center"
+    >
+      <h1 className="text-2xl font-black">
+        خطا در دریافت اطلاعات جلسه
+      </h1>
+
+      <p className="mx-auto mt-3 max-w-xl text-[#716760]">
+        {errorMessage || "اطلاعات جلسه دریافت نشد."}
+      </p>
+    </main>
+  );
+}
 
   const lesson = data.lessons.find((item) => item.id === lessonId);
 
@@ -169,7 +172,7 @@ export default function LessonPage() {
               </div>
             </div>
           ) : (
-            <SpotPlayerFrame videoId={lesson.videoId} lessonId={lesson.id} />
+            <SpotPlayerLicense courseId={data.course.id} />
           )}
 
           <div className="mt-7">

@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using NailCourse.Application.Services;
 using NailCourse.Infrastructure.Data;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace NailCourse.Api.Controllers;
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SpotPlayerController : ControllerBase
@@ -19,29 +22,32 @@ public class SpotPlayerController : ControllerBase
         _db = db;
     }
 
-
     [HttpPost("create-license")]
     public async Task<IActionResult> CreateLicense()
     {
-        // فعلاً تستی
-        // بعداً از Enrollment واقعی می‌گیریم
+        var courseId = Guid.Parse("20000000-0000-0000-0000-000000000001");
 
-        var courseId = Guid.Parse(
-            "20000000-0000-0000-0000-000000000001");
+        var course = await _db.Courses
+            .FirstOrDefaultAsync(x => x.Id == courseId);
 
+        if (course == null)
+        {
+            return NotFound(new
+            {
+                message = "Course not found."
+            });
+        }
 
         var license =
             await _spotPlayerService.CreateLicenseAsync(
-                courseId,
+                course,
                 "Test Student",
                 "test-enrollment-001",
                 true);
 
-
         _db.SpotPlayerLicenses.Add(license);
 
         await _db.SaveChangesAsync();
-
 
         return Ok(new
         {
@@ -51,4 +57,42 @@ public class SpotPlayerController : ControllerBase
             license.LicenseUrl
         });
     }
+    [HttpGet("my-license/{courseId:guid}")]
+public async Task<IActionResult> GetMyLicense(Guid courseId)
+{
+    var userId = User.FindFirstValue(
+        ClaimTypes.NameIdentifier
+    );
+
+    if (string.IsNullOrWhiteSpace(userId))
+        return Unauthorized();
+
+    var license = await _db.SpotPlayerLicenses
+        .AsNoTracking()
+        .Include(x => x.Enrollment)
+        .FirstOrDefaultAsync(x =>
+            x.CourseId == courseId &&
+            x.Enrollment != null &&
+            x.Enrollment.UserId == userId &&
+            x.Enrollment.IsActive);
+
+    if (license == null)
+    {
+        return NotFound(new
+        {
+            message = "Active SpotPlayer license not found."
+        });
+    }
+
+    return Ok(new
+    {
+        license.SpotPlayerLicenseId,
+        license.LicenseKey,
+        license.LicenseUrl,
+        license.IsTest
+    });
 }
+}
+
+
+

@@ -6,20 +6,27 @@ import {
   ArrowLeft,
   BookOpen,
   CheckCircle2,
+  KeyRound,
   LogOut,
   PlayCircle,
+  ShoppingBag,
 } from "lucide-react";
-import { courses } from "@/data/courses";
-import { getLessons } from "@/data/lessons";
 import { apiFetch } from "@/lib/api";
 import { logout, hasTeacherRole } from "@/lib/auth";
 
-type EnrollmentItem = {
-  progress?: number;
-  course?: {
+type Course = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  price: number;
+  thumbnailUrl?: string | null;
+  progress: number;
+  enrolledAt: string;
+  category: {
+    id: string;
+    name: string;
     slug: string;
-    title: string;
-    thumbnailUrl?: string | null;
   };
 };
 
@@ -27,43 +34,48 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<EnrollmentItem[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    apiFetch<EnrollmentItem[]>("/enrollments")
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+    async function loadCourses() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const result = await apiFetch<Course[]>(
+          "/Courses/enrolled"
+        );
+
+        setCourses(result);
+      } catch (err) {
+        console.error(err);
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "دریافت دوره‌های شما با خطا مواجه شد."
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCourses();
   }, []);
 
-  const display = items.length
-    ? items
-        .filter((item) => item.course)
-        .map((item) => ({
-          slug: item.course!.slug,
-          title: item.course!.title,
-          image: item.course!.thumbnailUrl,
-          progress: Number(item.progress ?? 0),
-        }))
-    : courses.slice(0, 2).map((course) => {
-        const lessons = getLessons(course.slug);
+  const completedCourses = courses.filter(
+    (course) => course.progress >= 100
+  ).length;
 
-        const progress =
-          lessons.length > 0
-            ? Math.round(
-                (lessons.filter((lesson) => lesson.completed).length /
-                  lessons.length) *
-                  100
-              )
-            : 0;
+  const learningCourses = courses.filter(
+    (course) => course.progress < 100
+  ).length;
 
-        return {
-          slug: course.slug,
-          title: course.title,
-          image: course.image,
-          progress,
-        };
-      });
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
 
   if (loading) {
     return (
@@ -78,17 +90,13 @@ export default function DashboardPage() {
     );
   }
 
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
-  };
-
   return (
     <main
       dir="rtl"
       className="min-h-[calc(100vh-80px)] bg-[#fbf8f4] px-4 py-10 sm:px-6 lg:px-8"
     >
       <div className="mx-auto max-w-7xl">
+
         {/* Header */}
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -101,7 +109,7 @@ export default function DashboardPage() {
             </h1>
 
             <p className="mt-3 text-sm leading-7 text-[#75685f]">
-              دوره‌های آموزشی و میزان پیشرفت یادگیری شما
+              دوره‌ها، پیشرفت یادگیری و دسترسی‌های شما
             </p>
           </div>
 
@@ -127,8 +135,22 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Error */}
+        {error && (
+          <div className="mb-8 rounded-2xl border border-red-100 bg-red-50 p-5 text-sm text-red-700">
+            <p className="font-black">
+              دریافت اطلاعات با خطا مواجه شد
+            </p>
+
+            <p className="mt-2">
+              {error}
+            </p>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
+
           <div className="rounded-3xl border border-[#eadfd7] bg-white p-6">
             <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3e6df] text-[#8d6a55]">
               <BookOpen className="h-5 w-5" />
@@ -139,7 +161,7 @@ export default function DashboardPage() {
             </p>
 
             <p className="mt-2 text-3xl font-black text-[#211d1a]">
-              {display.length.toLocaleString("fa-IR")}
+              {courses.length.toLocaleString("fa-IR")}
             </p>
           </div>
 
@@ -153,9 +175,7 @@ export default function DashboardPage() {
             </p>
 
             <p className="mt-2 text-3xl font-black text-[#211d1a]">
-              {display.filter((item) => item.progress < 100).length.toLocaleString(
-                "fa-IR"
-              )}
+              {learningCourses.toLocaleString("fa-IR")}
             </p>
           </div>
 
@@ -169,15 +189,64 @@ export default function DashboardPage() {
             </p>
 
             <p className="mt-2 text-3xl font-black text-[#211d1a]">
-              {display.filter((item) => item.progress >= 100).length.toLocaleString(
-                "fa-IR"
-              )}
+              {completedCourses.toLocaleString("fa-IR")}
             </p>
           </div>
+
+        </div>
+
+        {/* Quick Links */}
+        <div className="mb-8 grid gap-4 md:grid-cols-2">
+
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/orders")}
+            className="flex items-center gap-4 rounded-3xl border border-[#eadfd7] bg-white p-5 text-right transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#f3e6df] text-[#8d6a55]">
+              <ShoppingBag className="h-5 w-5" />
+            </div>
+
+            <div className="flex-1">
+              <h3 className="font-black text-[#211d1a]">
+                سفارش‌های من
+              </h3>
+
+              <p className="mt-1 text-xs text-[#8b7d74]">
+                مشاهده خریدها و وضعیت پرداخت
+              </p>
+            </div>
+
+            <ArrowLeft className="h-5 w-5 text-[#8d6a55]" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/licenses")}
+            className="flex items-center gap-4 rounded-3xl border border-[#eadfd7] bg-white p-5 text-right transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#f3e6df] text-[#8d6a55]">
+              <KeyRound className="h-5 w-5" />
+            </div>
+
+            <div className="flex-1">
+              <h3 className="font-black text-[#211d1a]">
+                لایسنس‌های SpotPlayer
+              </h3>
+
+              <p className="mt-1 text-xs text-[#8b7d74]">
+                مشاهده و دریافت لایسنس دوره‌ها
+              </p>
+            </div>
+
+            <ArrowLeft className="h-5 w-5 text-[#8d6a55]" />
+          </button>
+
         </div>
 
         {/* Courses */}
         <section>
+
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-black text-[#211d1a]">
@@ -191,16 +260,17 @@ export default function DashboardPage() {
 
             <button
               type="button"
-              onClick={() => router.push("/courses")}
+              onClick={() => router.push("/course/my-courses")}
               className="flex items-center gap-2 text-xs font-black text-[#8d6a55] transition hover:text-[#b78b72]"
             >
-              مشاهده همه دوره‌ها
+              مشاهده همه
               <ArrowLeft className="h-4 w-4" />
             </button>
           </div>
 
-          {display.length === 0 ? (
+          {courses.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-[#ddcfc5] bg-white px-6 py-16 text-center">
+
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#f3e6df] text-[#8d6a55]">
                 <BookOpen className="h-7 w-7" />
               </div>
@@ -210,30 +280,33 @@ export default function DashboardPage() {
               </h3>
 
               <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-[#8b7d74]">
-                بعد از ثبت‌نام در یک دوره، دوره‌های شما در این قسمت نمایش داده
-                می‌شوند.
+                بعد از خرید یک دوره، دوره‌های شما در این قسمت نمایش داده می‌شوند.
               </p>
 
               <button
                 type="button"
-                onClick={() => router.push("/courses")}
+                onClick={() => router.push("/")}
                 className="mt-6 rounded-2xl bg-[#b78b72] px-6 py-3.5 text-sm font-black text-white transition hover:bg-[#8d6a55]"
               >
                 مشاهده دوره‌ها
               </button>
+
             </div>
           ) : (
             <div className="grid gap-5 md:grid-cols-2">
-              {display.map((course) => (
+
+              {courses.map((course) => (
                 <article
-                  key={course.slug}
+                  key={course.id}
                   className="overflow-hidden rounded-3xl border border-[#eadfd7] bg-white shadow-[0_12px_35px_rgba(57,39,29,.05)]"
                 >
                   <div className="flex flex-col sm:flex-row">
+
                     <div className="h-52 w-full bg-[#f3e6df] sm:h-auto sm:w-48">
-                      {course.image ? (
+
+                      {course.thumbnailUrl ? (
                         <img
-                          src={course.image}
+                          src={course.thumbnailUrl}
                           alt={course.title}
                           className="h-full w-full object-cover"
                         />
@@ -242,14 +315,21 @@ export default function DashboardPage() {
                           <BookOpen className="h-10 w-10" />
                         </div>
                       )}
+
                     </div>
 
                     <div className="flex flex-1 flex-col p-5">
-                      <h3 className="text-lg font-black leading-8 text-[#211d1a]">
+
+                      <span className="text-xs font-bold text-[#8d6a55]">
+                        {course.category.name}
+                      </span>
+
+                      <h3 className="mt-2 text-lg font-black leading-8 text-[#211d1a]">
                         {course.title}
                       </h3>
 
                       <div className="mt-5">
+
                         <div className="mb-2 flex items-center justify-between text-xs">
                           <span className="font-bold text-[#75685f]">
                             پیشرفت دوره
@@ -271,26 +351,51 @@ export default function DashboardPage() {
                             }}
                           />
                         </div>
+
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          router.push(`/courses/${course.slug}`)
-                        }
-                        className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-[#b78b72] px-5 py-3.5 text-sm font-black text-white transition hover:bg-[#8d6a55]"
-                      >
-                        ادامه یادگیری
-                        <ArrowLeft className="h-4 w-4" />
-                      </button>
+                      <div className="mt-6 flex flex-wrap gap-2">
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(
+                              `/learn/${course.slug}/30000000-0000-0000-0000-000000000001`
+                            )
+                          }
+                          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#b78b72] px-4 py-3.5 text-sm font-black text-white transition hover:bg-[#8d6a55]"
+                        >
+                          ادامه یادگیری
+                          <ArrowLeft className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/licenses?courseId=${course.id}`
+                            )
+                          }
+                          className="flex items-center justify-center gap-2 rounded-2xl border border-[#dfd2c9] px-4 py-3.5 text-xs font-black text-[#8d6a55] transition hover:bg-[#f8f1ed]"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                          لایسنس
+                        </button>
+
+                      </div>
+
                     </div>
                   </div>
                 </article>
               ))}
+
             </div>
           )}
+
         </section>
+
       </div>
     </main>
   );
 }
+

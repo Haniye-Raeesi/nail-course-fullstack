@@ -5,7 +5,7 @@ namespace NailCourse.Application.Services;
 public interface ISpotPlayerService
 {
     Task<SpotPlayerLicense> CreateLicenseAsync(
-        Guid courseId,
+        Course course,
         string customerName,
         string? payload = null,
         bool test = true);

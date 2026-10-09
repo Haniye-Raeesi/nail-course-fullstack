@@ -153,6 +153,8 @@ builder.Entity<SpotPlayerLicense>(entity =>
 
             entity.Property(x => x.Price)
                 .HasPrecision(18, 2);
+                entity.Property(x => x.SpotPlayerCourseId)
+    .HasMaxLength(200);
 
             entity.HasMany(x => x.Lessons)
                 .WithOne(x => x.Course)
