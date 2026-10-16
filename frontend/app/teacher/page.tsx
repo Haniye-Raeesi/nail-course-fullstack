@@ -465,6 +465,7 @@ function Lessons({
   setMessage: (x: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   if (!course)
     return (
       <div className="rounded-[28px] bg-white p-8">
@@ -512,19 +513,35 @@ function Lessons({
                 {l.videoId ? `• ${l.videoId}` : ""}
               </p>
             </div>
-            <button
-              onClick={async () => {
-                if (!confirm("این درس حذف شود؟")) return;
-                await apiFetch(`/teacher/lessons/${l.id}`, {
-                  method: "DELETE",
-                });
-                reload();
-                setMessage("درس حذف شد.");
-              }}
-              className="rounded-full bg-red-50 p-3 text-red-700"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {" "}
+              <button
+                onClick={() => setEditingLesson(l)}
+                className="rounded-full bg-[#f5ebe5] px-4 py-2 text-sm font-bold text-[#8d6a55] transition hover:bg-[#ead8cc]"
+              >
+                {" "}
+                ویرایش{" "}
+              </button>{" "}
+              <button
+                onClick={async () => {
+                  if (!confirm("این درس حذف شود؟")) return;
+                  try {
+                    await apiFetch(`/teacher/lessons/${l.id}`, {
+                      method: "DELETE",
+                    });
+                    reload();
+                    setMessage("درس حذف شد.");
+                  } catch (e: any) {
+                    setMessage(e.message || "حذف درس انجام نشد.");
+                  }
+                }}
+                className="rounded-full bg-red-50 p-3 text-red-700"
+                aria-label="حذف درس"
+              >
+                {" "}
+                <Trash2 className="h-4 w-4" />{" "}
+              </button>{" "}
+            </div>
           </div>
         ))}
       </div>
@@ -540,6 +557,17 @@ function Lessons({
           }}
         />
       )}
+      {editingLesson && (
+  <EditLessonModal
+    lesson={editingLesson}
+    onClose={() => setEditingLesson(null)}
+    onSaved={() => {
+      setEditingLesson(null);
+      reload();
+      setMessage("تغییرات درس با موفقیت ذخیره شد.");
+    }}
+  />
+)}
     </div>
   );
 }
@@ -759,6 +787,158 @@ function EditCourseModal({
     </Modal>
   );
 }
+function EditLessonModal({
+lesson,
+onClose,
+onSaved,
+}: {
+lesson: Lesson;
+onClose: () => void;
+onSaved: () => void;
+}) {
+const [f, setF] = useState({
+title: lesson.title,
+description: lesson.description ?? "",
+order: String(lesson.order),
+durationInMinutes: String(lesson.durationInMinutes),
+videoId: lesson.videoId ?? "",
+isFree: lesson.isFree,
+});
+
+const [err, setErr] = useState("");
+const [saving, setSaving] = useState(false);
+
+async function submit(e: FormEvent) {
+e.preventDefault();
+setErr("");
+
+const order = Number(f.order);
+const durationInMinutes = Number(f.durationInMinutes);
+
+if (!f.title.trim()) {
+  setErr("عنوان درس را وارد کنید.");
+  return;
+}
+
+if (!Number.isInteger(order) || order < 1) {
+  setErr("شماره درس باید عدد صحیح و حداقل ۱ باشد.");
+  return;
+}
+
+if (!Number.isFinite(durationInMinutes) || durationInMinutes < 0) {
+  setErr("مدت درس نمی‌تواند منفی باشد.");
+  return;
+}
+
+setSaving(true);
+
+try {
+  await apiFetch(`/teacher/lessons/${lesson.id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      title: f.title.trim(),
+      description: f.description.trim(),
+      order,
+      durationInMinutes,
+      videoId: f.videoId.trim() || null,
+      isFree: f.isFree,
+    }),
+  });
+
+  onSaved();
+} catch (e: unknown) {
+  setErr(
+    e instanceof Error
+      ? e.message
+      : "ذخیره تغییرات درس ناموفق بود."
+  );
+} finally {
+  setSaving(false);
+}
+
+}
+
+return ( <Modal title="ویرایش درس" onClose={onClose}> <form onSubmit={submit} className="space-y-4">
+<Input
+label="عنوان درس"
+value={f.title}
+onChange={(v) => setF({ ...f, title: v })}
+required
+/>
+    <Input
+      label="شماره ترتیب"
+      type="number"
+      value={f.order}
+      onChange={(v) => setF({ ...f, order: v })}
+      required
+    />
+
+    <Input
+      label="مدت درس (دقیقه)"
+      type="number"
+      value={f.durationInMinutes}
+      onChange={(v) =>
+        setF({ ...f, durationInMinutes: v })
+      }
+      required
+    />
+
+    <Input
+      label="شناسه ویدئو (Video ID)"
+      value={f.videoId}
+      onChange={(v) => setF({ ...f, videoId: v })}
+    />
+
+    <textarea
+      className="min-h-24 w-full rounded-xl border p-3"
+      placeholder="توضیحات درس"
+      value={f.description}
+      onChange={(e) =>
+        setF({ ...f, description: e.target.value })
+      }
+    />
+
+    <label className="flex items-center gap-2 text-sm">
+      <input
+        type="checkbox"
+        checked={f.isFree}
+        onChange={(e) =>
+          setF({ ...f, isFree: e.target.checked })
+        }
+      />
+      درس رایگان
+    </label>
+
+    {err && (
+      <p role="alert" className="text-sm text-red-600">
+        {err}
+      </p>
+    )}
+
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={onClose}
+        className="flex-1 rounded-full border border-[#b78b72] py-3 font-bold text-[#8d6a55]"
+      >
+        انصراف
+      </button>
+
+      <button
+        type="submit"
+        disabled={saving}
+        className="flex-1 rounded-full bg-[#b78b72] py-3 font-black text-white transition hover:bg-[#8d6a55] disabled:opacity-60"
+      >
+        {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
+      </button>
+    </div>
+  </form>
+</Modal>
+
+
+);
+}
+
 
 function LessonModal({
   courseId,
