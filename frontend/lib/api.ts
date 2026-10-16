@@ -1,10 +1,11 @@
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ??
   "http://localhost:5281/api";
 
 export async function apiFetch<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   const token =
     typeof window !== "undefined"
@@ -15,37 +16,41 @@ export async function apiFetch<T>(
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers ?? {}),
     },
   });
 
-  // JWT منقضی یا نامعتبر شده است
   if (response.status === 401) {
-    if (typeof window !== "undefined") {
+    const isAuthPage =
+      typeof window !== "undefined" &&
+      (window.location.pathname.startsWith("/login") ||
+        window.location.pathname.startsWith("/register"));
+
+    if (token && !isAuthPage && typeof window !== "undefined") {
       localStorage.removeItem("token");
 
-      // اگر قبلاً در صفحه login نیستیم
-      if (!window.location.pathname.startsWith("/login")) {
-        window.location.href = "/login?expired=true";
-      }
+      sessionStorage.setItem(
+        "auth-message",
+        "نشست شما منقضی شده است. لطفاً دوباره وارد شوید.",
+      );
+
+      window.dispatchEvent(new Event("auth-changed"));
+      window.location.replace("/login?expired=true");
     }
 
+    const message = await response.text();
+
     throw new Error(
-      "جلسه ورود شما منقضی شده است. لطفاً دوباره وارد شوید."
+      token && !isAuthPage
+        ? "نشست شما منقضی شده است. لطفاً دوباره وارد شوید."
+        : message || "احراز هویت ناموفق بود.",
     );
   }
 
   if (!response.ok) {
-    const text = await response.text();
-
-    throw new Error(
-      text || `Request failed: ${response.status}`
-    );
+    const message = await response.text();
+    throw new Error(message || `Request failed: ${response.status}`);
   }
 
   return response.json();

@@ -43,9 +43,7 @@ export default function DashboardPage() {
         setLoading(true);
         setError("");
 
-        const result = await apiFetch<Course[]>(
-          "/Courses/enrolled"
-        );
+        const result = await apiFetch<Course[]>("/Courses/enrolled");
 
         setCourses(result);
       } catch (err) {
@@ -54,7 +52,7 @@ export default function DashboardPage() {
         setError(
           err instanceof Error
             ? err.message
-            : "دریافت دوره‌های شما با خطا مواجه شد."
+            : "دریافت دوره‌های شما با خطا مواجه شد.",
         );
       } finally {
         setLoading(false);
@@ -65,11 +63,11 @@ export default function DashboardPage() {
   }, []);
 
   const completedCourses = courses.filter(
-    (course) => course.progress >= 100
+    (course) => course.progress >= 100,
   ).length;
 
   const learningCourses = courses.filter(
-    (course) => course.progress < 100
+    (course) => course.progress < 100,
   ).length;
 
   const handleLogout = () => {
@@ -90,19 +88,41 @@ export default function DashboardPage() {
     );
   }
 
+  if (error) {
+    return (
+      <main
+        dir="rtl"
+        className="grid min-h-[70vh] place-items-center bg-[#fbf8f4] px-4 py-10"
+      >
+        <div className="w-full max-w-lg rounded-3xl border border-[#eadfd7] bg-white p-8 text-center">
+          <h1 className="text-xl font-black text-[#211d1a]">
+            دریافت اطلاعات ناموفق بود
+          </h1>
+
+          <p className="mt-4 text-sm leading-7 text-[#75685f]">{error}</p>
+
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-6 rounded-2xl bg-[#b78b72] px-6 py-3 font-bold text-white transition hover:bg-[#8d6a55]"
+          >
+            تلاش دوباره
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main
       dir="rtl"
       className="min-h-[calc(100vh-80px)] bg-[#fbf8f4] px-4 py-10 sm:px-6 lg:px-8"
     >
       <div className="mx-auto max-w-7xl">
-
         {/* Header */}
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-2 text-sm font-bold text-[#b78b72]">
-              پنل کاربری
-            </p>
+            <p className="mb-2 text-sm font-bold text-[#b78b72]">پنل کاربری</p>
 
             <h1 className="text-3xl font-black text-[#211d1a] sm:text-4xl">
               داشبورد من
@@ -112,53 +132,25 @@ export default function DashboardPage() {
               دوره‌ها، پیشرفت یادگیری و دسترسی‌های شما
             </p>
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            {hasTeacherRole() && (
-              <button
-                type="button"
-                onClick={() => router.push("/teacher")}
-                className="rounded-full bg-[#b78b72] px-5 py-3 text-xs font-black text-white transition hover:bg-[#8d6a55]"
-              >
-                پنل مدرس
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex items-center gap-2 rounded-full border border-[#e4d9d0] bg-white px-5 py-3 text-xs font-bold text-[#655950] transition hover:border-[#b78b72] hover:text-[#8d6a55]"
-            >
-              <LogOut className="h-4 w-4" />
-              خروج
-            </button>
-          </div>
         </div>
 
         {/* Error */}
         {error && (
           <div className="mb-8 rounded-2xl border border-red-100 bg-red-50 p-5 text-sm text-red-700">
-            <p className="font-black">
-              دریافت اطلاعات با خطا مواجه شد
-            </p>
+            <p className="font-black">دریافت اطلاعات با خطا مواجه شد</p>
 
-            <p className="mt-2">
-              {error}
-            </p>
+            <p className="mt-2">{error}</p>
           </div>
         )}
 
         {/* Stats */}
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
-
           <div className="rounded-3xl border border-[#eadfd7] bg-white p-6">
             <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3e6df] text-[#8d6a55]">
               <BookOpen className="h-5 w-5" />
             </div>
 
-            <p className="text-xs font-bold text-[#8b7d74]">
-              دوره‌های من
-            </p>
+            <p className="text-xs font-bold text-[#8b7d74]">دوره‌های من</p>
 
             <p className="mt-2 text-3xl font-black text-[#211d1a]">
               {courses.length.toLocaleString("fa-IR")}
@@ -170,9 +162,7 @@ export default function DashboardPage() {
               <PlayCircle className="h-5 w-5" />
             </div>
 
-            <p className="text-xs font-bold text-[#8b7d74]">
-              در حال یادگیری
-            </p>
+            <p className="text-xs font-bold text-[#8b7d74]">در حال یادگیری</p>
 
             <p className="mt-2 text-3xl font-black text-[#211d1a]">
               {learningCourses.toLocaleString("fa-IR")}
@@ -184,20 +174,16 @@ export default function DashboardPage() {
               <CheckCircle2 className="h-5 w-5" />
             </div>
 
-            <p className="text-xs font-bold text-[#8b7d74]">
-              تکمیل‌شده
-            </p>
+            <p className="text-xs font-bold text-[#8b7d74]">تکمیل‌شده</p>
 
             <p className="mt-2 text-3xl font-black text-[#211d1a]">
               {completedCourses.toLocaleString("fa-IR")}
             </p>
           </div>
-
         </div>
 
         {/* Quick Links */}
         <div className="mb-8 grid gap-4 md:grid-cols-2">
-
           <button
             type="button"
             onClick={() => router.push("/dashboard/orders")}
@@ -208,9 +194,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex-1">
-              <h3 className="font-black text-[#211d1a]">
-                سفارش‌های من
-              </h3>
+              <h3 className="font-black text-[#211d1a]">سفارش‌های من</h3>
 
               <p className="mt-1 text-xs text-[#8b7d74]">
                 مشاهده خریدها و وضعیت پرداخت
@@ -241,17 +225,13 @@ export default function DashboardPage() {
 
             <ArrowLeft className="h-5 w-5 text-[#8d6a55]" />
           </button>
-
         </div>
 
         {/* Courses */}
         <section>
-
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-black text-[#211d1a]">
-                دوره‌های من
-              </h2>
+              <h2 className="text-xl font-black text-[#211d1a]">دوره‌های من</h2>
 
               <p className="mt-1 text-xs text-[#8b7d74]">
                 ادامه مسیر یادگیری شما
@@ -270,7 +250,6 @@ export default function DashboardPage() {
 
           {courses.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-[#ddcfc5] bg-white px-6 py-16 text-center">
-
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#f3e6df] text-[#8d6a55]">
                 <BookOpen className="h-7 w-7" />
               </div>
@@ -280,7 +259,8 @@ export default function DashboardPage() {
               </h3>
 
               <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-[#8b7d74]">
-                بعد از خرید یک دوره، دوره‌های شما در این قسمت نمایش داده می‌شوند.
+                بعد از خرید یک دوره، دوره‌های شما در این قسمت نمایش داده
+                می‌شوند.
               </p>
 
               <button
@@ -290,20 +270,16 @@ export default function DashboardPage() {
               >
                 مشاهده دوره‌ها
               </button>
-
             </div>
           ) : (
             <div className="grid gap-5 md:grid-cols-2">
-
               {courses.map((course) => (
                 <article
                   key={course.id}
                   className="overflow-hidden rounded-3xl border border-[#eadfd7] bg-white shadow-[0_12px_35px_rgba(57,39,29,.05)]"
                 >
                   <div className="flex flex-col sm:flex-row">
-
                     <div className="h-52 w-full bg-[#f3e6df] sm:h-auto sm:w-48">
-
                       {course.thumbnailUrl ? (
                         <img
                           src={course.thumbnailUrl}
@@ -315,11 +291,9 @@ export default function DashboardPage() {
                           <BookOpen className="h-10 w-10" />
                         </div>
                       )}
-
                     </div>
 
                     <div className="flex flex-1 flex-col p-5">
-
                       <span className="text-xs font-bold text-[#8d6a55]">
                         {course.category.name}
                       </span>
@@ -329,7 +303,6 @@ export default function DashboardPage() {
                       </h3>
 
                       <div className="mt-5">
-
                         <div className="mb-2 flex items-center justify-between text-xs">
                           <span className="font-bold text-[#75685f]">
                             پیشرفت دوره
@@ -346,21 +319,19 @@ export default function DashboardPage() {
                             style={{
                               width: `${Math.min(
                                 Math.max(course.progress, 0),
-                                100
+                                100,
                               )}%`,
                             }}
                           />
                         </div>
-
                       </div>
 
                       <div className="mt-6 flex flex-wrap gap-2">
-
                         <button
                           type="button"
                           onClick={() =>
                             router.push(
-                              `/learn/${course.slug}/30000000-0000-0000-0000-000000000001`
+                              `/learn/${course.slug}/30000000-0000-0000-0000-000000000001`,
                             )
                           }
                           className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#b78b72] px-4 py-3.5 text-sm font-black text-white transition hover:bg-[#8d6a55]"
@@ -373,7 +344,7 @@ export default function DashboardPage() {
                           type="button"
                           onClick={() =>
                             router.push(
-                              `/dashboard/licenses?courseId=${course.id}`
+                              `/dashboard/licenses?courseId=${course.id}`,
                             )
                           }
                           className="flex items-center justify-center gap-2 rounded-2xl border border-[#dfd2c9] px-4 py-3.5 text-xs font-black text-[#8d6a55] transition hover:bg-[#f8f1ed]"
@@ -381,21 +352,15 @@ export default function DashboardPage() {
                           <KeyRound className="h-4 w-4" />
                           لایسنس
                         </button>
-
                       </div>
-
                     </div>
                   </div>
                 </article>
               ))}
-
             </div>
           )}
-
         </section>
-
       </div>
     </main>
   );
 }
-
