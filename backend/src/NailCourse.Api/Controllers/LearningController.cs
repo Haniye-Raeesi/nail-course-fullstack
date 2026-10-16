@@ -62,7 +62,8 @@ public class LearningController : ControllerBase
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
                     x.CourseId == course.Id &&
-                    x.UserId == userId);
+                    x.UserId == userId &&
+                     x.IsActive);
 
             if (enrollment != null)
             {

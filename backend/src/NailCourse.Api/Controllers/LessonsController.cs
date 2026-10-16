@@ -19,28 +19,44 @@ public class LessonsController : ControllerBase
         _context = context;
     }
 
-  [HttpGet]
+[HttpGet]
 public async Task<IActionResult> GetLessons(Guid courseId)
 {
-    var courseExists = await _context.Courses
-        .AnyAsync(x => x.Id == courseId);
+    var course = await _context.Courses
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x =>
+            x.Id == courseId &&
+            x.IsPublished);
 
-    if (!courseExists)
+    if (course == null)
+    {
         return NotFound(new
         {
             message = "Course not found."
         });
+    }
 
     var userId = User.FindFirstValue(
         ClaimTypes.NameIdentifier);
 
-    var hasEnrollment = userId != null &&
+    var isAdmin = User.IsInRole("Admin");
+
+    var isCourseTeacher =
+        !string.IsNullOrWhiteSpace(userId) &&
+        course.TeacherId == userId;
+
+    var hasEnrollment =
+        !string.IsNullOrWhiteSpace(userId) &&
         await _context.Enrollments.AnyAsync(x =>
             x.UserId == userId &&
             x.CourseId == courseId &&
             x.IsActive);
 
+    var canAccessPaidLessons =
+        isAdmin || isCourseTeacher || hasEnrollment;
+
     var lessons = await _context.Lessons
+        .AsNoTracking()
         .Where(x => x.CourseId == courseId)
         .OrderBy(x => x.Order)
         .Select(x => new
@@ -51,14 +67,24 @@ public async Task<IActionResult> GetLessons(Guid courseId)
             x.Order,
             x.DurationInMinutes,
             x.IsFree,
-
-            VideoId = x.IsFree || hasEnrollment
-                ? x.VideoId
-                : null
+            x.VideoId
         })
         .ToListAsync();
 
-    return Ok(lessons);
+    var result = lessons.Select(x => new
+    {
+        x.Id,
+        x.Title,
+        x.Description,
+        x.Order,
+        x.DurationInMinutes,
+        x.IsFree,
+        VideoId = x.IsFree || canAccessPaidLessons
+            ? x.VideoId
+            : null
+    });
+
+    return Ok(result);
 }
 
     [HttpGet("{lessonId:guid}")]
@@ -120,13 +146,34 @@ public async Task<IActionResult> GetLessons(Guid courseId)
         Guid courseId,
         Guid lessonId)
     {
-        var lesson = await _context.Lessons
-            .FirstOrDefaultAsync(x =>
-                x.Id == lessonId &&
-                x.CourseId == courseId);
+        var userId = User.FindFirstValue(
+    ClaimTypes.NameIdentifier);
 
-        if (lesson == null)
-            return NotFound();
+if (string.IsNullOrWhiteSpace(userId))
+    return Unauthorized();
+
+var course = await _context.Courses
+    .FirstOrDefaultAsync(x => x.Id == courseId);
+
+if (course == null)
+    return NotFound(new
+    {
+        message = "Course not found."
+    });
+
+if (!User.IsInRole("Admin") &&
+    course.TeacherId != userId)
+{
+    return Forbid();
+}
+
+var lesson = await _context.Lessons
+    .FirstOrDefaultAsync(x =>
+        x.Id == lessonId &&
+        x.CourseId == courseId);
+
+if (lesson == null)
+    return NotFound();
 
         _context.Lessons.Remove(lesson);
 

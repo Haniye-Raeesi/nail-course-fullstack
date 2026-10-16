@@ -190,7 +190,8 @@ public async Task<IActionResult> GetCourseAccess(Guid id)
         .AsNoTracking()
         .FirstOrDefaultAsync(x =>
             x.CourseId == id &&
-            x.UserId == userId);
+            x.UserId == userId &&
+    x.IsActive);
 
     if (enrollment == null)
     {
