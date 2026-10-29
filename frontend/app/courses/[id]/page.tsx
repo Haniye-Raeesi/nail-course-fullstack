@@ -76,6 +76,8 @@ export default function CourseDetailsPage({
   const [error, setError] = useState("");
   const [access, setAccess] = useState<CourseAccess | null>(null);
   const [accessLoading, setAccessLoading] = useState(true);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [purchaseError, setPurchaseError] = useState("");
 
   useEffect(() => {
     async function loadCourse() {
@@ -174,7 +176,47 @@ export default function CourseDetailsPage({
   const freeLessons = course.lessons.filter((lesson) => lesson.isFree);
 
   const firstLesson = [...course.lessons].sort((a, b) => a.order - b.order)[0];
+  const handlePurchase = async () => {
+    if (!course || isPurchasing) return;
 
+    setIsPurchasing(true);
+    setPurchaseError("");
+
+    try {
+      const order = await apiFetch<{
+        orderId: string;
+        totalAmount: number;
+        status: string;
+      }>("/orders", {
+        method: "POST",
+        body: JSON.stringify({
+          courseIds: [course.id],
+        }),
+      });
+
+      const payment = await apiFetch<{
+        orderId: string;
+        paymentUrl: string;
+        authority: string;
+      }>(`/payments/request/${order.orderId}`, {
+        method: "POST",
+      });
+
+      if (!payment.paymentUrl) {
+        throw new Error("آدرس پرداخت دریافت نشد.");
+      }
+
+      window.location.href = payment.paymentUrl;
+    } catch (error) {
+      setPurchaseError(
+        error instanceof Error
+          ? error.message
+          : "ثبت سفارش یا شروع پرداخت ناموفق بود.",
+      );
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
   return (
     <main className="min-h-screen">
       {/* Hero */}
@@ -282,13 +324,26 @@ export default function CourseDetailsPage({
                       <PlayCircle className="h-5 w-5" />
                     </Link>
                   ) : (
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#8d6a55] transition hover:bg-[#f7eee8]"
-                    >
-                      خرید دوره
-                      <ArrowRight className="h-5 w-5" />
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={handlePurchase}
+                        disabled={isPurchasing}
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#8d6a55] transition hover:bg-[#f7eee8] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isPurchasing ? "در حال ثبت سفارش..." : "خرید دوره"}
+                        <ArrowRight className="h-5 w-5" />
+                      </button>
+
+                      {purchaseError && (
+                        <p
+                          role="alert"
+                          className="mt-3 text-sm leading-6 text-red-700"
+                        >
+                          {purchaseError}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

@@ -123,7 +123,6 @@ export default function HomePage() {
           students: 0,
           featured: index === 0,
           image:
-            course.thumbnailUrl ||
             `/images/generated/courses/course-${index + 1}.jpg`,
         }));
 
@@ -153,7 +152,7 @@ export default function HomePage() {
   const featured = courses.slice(0, 4);
 
   return (
-    <main dir="rtl" className="overflow-hidden bg-[#fbf8f4] text-[#211d1a]">
+    <main dir="rtl" id="top" className="overflow-hidden bg-[#fbf8f4] text-[#211d1a]">
       {/* HERO */}
       <section className="mx-auto max-w-[1440px] px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6">
         <div className="relative isolate min-h-[620px] overflow-hidden rounded-[2rem] bg-[#e9dfd5] shadow-[0_30px_90px_rgba(57,39,29,0.12)] sm:min-h-[680px] lg:min-h-[720px] lg:rounded-[2.75rem]">

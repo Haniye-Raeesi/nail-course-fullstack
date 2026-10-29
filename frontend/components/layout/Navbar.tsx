@@ -1,13 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Menu,
-  ShoppingBag,
-  X,
-  UserRound,
-  LogOut,
-} from "lucide-react";
+import { Menu, ShoppingBag, X, UserRound, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 
@@ -78,7 +72,7 @@ export default function Navbar() {
             </Link>
 
             <Link
-              href="/#about"
+              href="/about"
               className="rounded-full px-4 py-3 text-sm font-bold text-[#655950] transition hover:bg-white hover:text-[#8d6a55]"
             >
               درباره ما
@@ -92,7 +86,7 @@ export default function Navbar() {
             </Link>
 
             <Link
-              href="/#about"
+              href="/articles"
               className="rounded-full px-4 py-3 text-sm font-bold text-[#655950] transition hover:bg-white hover:text-[#8d6a55]"
             >
               مقالات
@@ -153,11 +147,7 @@ export default function Navbar() {
             onClick={() => setOpen(!open)}
             className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4d9d0] bg-white md:hidden"
           >
-            {open ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
@@ -182,9 +172,9 @@ export default function Navbar() {
               </Link>
 
               <Link
-                href="/#about"
+                href="/about"
                 onClick={close}
-                className="rounded-xl px-4 py-3.5 text-base font-bold text-[#655950] transition hover:bg-white"
+                className="rounded-full px-4 py-3 text-sm font-bold text-[#655950] transition hover:bg-white hover:text-[#8d6a55]"
               >
                 درباره ما
               </Link>
@@ -198,11 +188,11 @@ export default function Navbar() {
               </Link>
 
               <Link
-                href="/#about"
+                href="/articles"
                 onClick={close}
                 className="rounded-xl px-4 py-3.5 text-base font-bold text-[#655950] transition hover:bg-white"
               >
-                آکادمی
+                مقالات
               </Link>
 
               <Link

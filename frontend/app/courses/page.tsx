@@ -50,6 +50,7 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("همه");
+  const [sortOrder, setSortOrder] = useState("default");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -135,6 +136,23 @@ export default function CoursesPage() {
       return categoryMatch && searchMatch;
     });
   }, [courses, search, activeCategory]);
+  const sortedCourses = useMemo(() => {
+    const result = [...filteredCourses];
+
+    switch (sortOrder) {
+      case "price-asc":
+        return result.sort((a, b) => a.price - b.price);
+
+      case "price-desc":
+        return result.sort((a, b) => b.price - a.price);
+
+      case "title":
+        return result.sort((a, b) => a.title.localeCompare(b.title, "fa"));
+
+      default:
+        return result;
+    }
+  }, [filteredCourses, sortOrder]);
 
   return (
     <div className="min-h-screen">
@@ -261,7 +279,8 @@ export default function CoursesPage() {
             </div>
 
             {/* Title */}
-            <div className="mb-7 flex items-center justify-between">
+            <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              {" "}
               <div>
                 <h2 className="text-2xl font-black text-gray-900">
                   همه دوره‌ها
@@ -271,16 +290,60 @@ export default function CoursesPage() {
                   بهترین دوره‌ها برای پیشرفت حرفه‌ای
                 </p>
               </div>
+              <div className="flex items-center gap-3">
+  <span className="hidden text-sm font-medium text-[#8d6a55] sm:inline">
+    مرتب‌سازی:
+  </span>
 
+  <div className="relative">
+    <SlidersHorizontal
+      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8d6a55]"
+    />
+
+    <select
+      value={sortOrder}
+      onChange={(e) => setSortOrder(e.target.value)}
+      aria-label="مرتب‌سازی دوره‌ها"
+      className="
+        min-w-[190px]
+        cursor-pointer
+        appearance-none
+        rounded-2xl
+        border border-[#eadbd1]
+        bg-[#fbf7f3]
+        py-3
+        pl-10
+        pr-11
+        text-sm
+        font-semibold
+        text-[#654b3c]
+        shadow-sm
+        outline-none
+        transition-all
+        duration-200
+        hover:border-[#b78b72]
+        hover:bg-[#f7eee7]
+        focus:border-[#b78b72]
+        focus:ring-4
+        focus:ring-[#b78b72]/10
+      "
+    >
+      <option value="default">ترتیب پیش‌فرض</option>
+      <option value="price-asc">قیمت: از کم به زیاد</option>
+      <option value="price-desc">قیمت: از زیاد به کم</option>
+      <option value="title">ترتیب الفبایی</option>
+    </select>
+  </div>
+</div>
               <div className="nc-badge px-3 py-2">
                 {filteredCourses.length.toLocaleString("fa-IR")} دوره
               </div>
             </div>
 
             {/* Courses */}
-            {filteredCourses.length > 0 ? (
+            {sortedCourses.length > 0 ? (
               <div className="grid gap-7 md:grid-cols-2 xl:grid-cols-3">
-                {filteredCourses.map((course) => (
+                {sortedCourses.map((course) => (
                   <CourseCard key={course.id} course={course} />
                 ))}
               </div>

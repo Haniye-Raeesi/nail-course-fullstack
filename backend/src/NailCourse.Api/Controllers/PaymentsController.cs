@@ -88,6 +88,26 @@ public class PaymentsController : ControllerBase
         });
     }
 
+    [HttpGet("sandbox-pay/{authority}")]
+public IActionResult SandboxPay(string authority)
+{
+    if (string.IsNullOrWhiteSpace(authority) ||
+        !authority.StartsWith("SANDBOX-"))
+    {
+        return BadRequest(new
+        {
+            message = "Invalid sandbox authority."
+        });
+    }
+
+    return Ok(new
+    {
+        message = "Sandbox payment page reached.",
+        authority,
+        note = "This endpoint does not verify or complete a payment."
+    });
+}
+
     [HttpGet("verify/{orderId:guid}")]
     public async Task<IActionResult> VerifyPayment(
         Guid orderId,

@@ -23,8 +23,8 @@ public class ZarinpalPaymentService : IPaymentService
         var authority =
             "SANDBOX-" + Guid.NewGuid().ToString("N");
 
-        var paymentUrl =
-            $"https://localhost:5281/api/payments/sandbox-pay/{authority}";
+       var paymentUrl =
+    $"http://localhost:3000/sandbox-pay?orderId={orderId}&authority={authority}";
 
         return Task.FromResult(
             new PaymentRequestResult(

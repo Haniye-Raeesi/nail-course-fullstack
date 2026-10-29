@@ -45,9 +45,7 @@ export default function LicensesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [copiedId, setCopiedId] = useState<string | null>(
-    null
-  );
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadLicenses() {
@@ -55,29 +53,28 @@ export default function LicensesPage() {
         setLoading(true);
         setError("");
 
-        const courses = await apiFetch<Course[]>(
-          "/Courses/enrolled"
-        );
+        const courses = await apiFetch<Course[]>("/Courses/enrolled");
 
         const results = await Promise.all(
           courses.map(async (course) => {
             try {
-              const license =
-                await apiFetch<License>(
-                  `/SpotPlayer/my-license/${course.id}`
-                );
+              const license = await apiFetch<License>(
+                `/SpotPlayer/my-license/${course.id}`,
+              );
 
               return {
                 course,
                 license,
               };
-            } catch {
+            } catch (err) {
+              console.error(`خطا در دریافت لایسنس دوره ${course.id}:`, err);
+
               return {
                 course,
                 license: null,
               };
             }
-          })
+          }),
         );
 
         setItems(results);
@@ -87,7 +84,7 @@ export default function LicensesPage() {
         setError(
           err instanceof Error
             ? err.message
-            : "دریافت اطلاعات لایسنس‌ها با خطا مواجه شد."
+            : "دریافت اطلاعات لایسنس‌ها با خطا مواجه شد.",
         );
       } finally {
         setLoading(false);
@@ -97,13 +94,9 @@ export default function LicensesPage() {
     loadLicenses();
   }, []);
 
-  async function copyLicense(
-    license: License
-  ) {
+  async function copyLicense(license: License) {
     try {
-      await navigator.clipboard.writeText(
-        license.licenseKey
-      );
+      await navigator.clipboard.writeText(license.licenseKey);
 
       setCopiedId(license.spotPlayerLicenseId);
 
@@ -175,8 +168,8 @@ export default function LicensesPage() {
             </h2>
 
             <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-[#716760]">
-              پس از خرید و تکمیل پرداخت دوره، لایسنس
-              SpotPlayer برای شما ایجاد می‌شود.
+              پس از خرید و تکمیل پرداخت دوره، لایسنس SpotPlayer برای شما ایجاد
+              می‌شود.
             </p>
 
             <Link
@@ -265,13 +258,10 @@ export default function LicensesPage() {
                       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                         <button
                           type="button"
-                          onClick={() =>
-                            copyLicense(license)
-                          }
+                          onClick={() => copyLicense(license)}
                           className="inline-flex items-center justify-center gap-2 rounded-full bg-[#b78b72] px-6 py-3 text-sm font-black text-white transition hover:bg-[#8d6a55]"
                         >
-                          {copiedId ===
-                          license.spotPlayerLicenseId ? (
+                          {copiedId === license.spotPlayerLicenseId ? (
                             <>
                               <Check className="h-4 w-4" />
                               کپی شد
@@ -295,17 +285,11 @@ export default function LicensesPage() {
                             ۱. نرم‌افزار SpotPlayer را روی سیستم خود نصب کنید.
                           </li>
 
-                          <li>
-                            ۲. نرم‌افزار SpotPlayer را باز کنید.
-                          </li>
+                          <li>۲. نرم‌افزار SpotPlayer را باز کنید.</li>
 
-                          <li>
-                            ۳. License Key بالا را وارد کنید.
-                          </li>
+                          <li>۳. License Key بالا را وارد کنید.</li>
 
-                          <li>
-                            ۴. دوره به حساب SpotPlayer شما اضافه می‌شود.
-                          </li>
+                          <li>۴. دوره به حساب SpotPlayer شما اضافه می‌شود.</li>
                         </ol>
                       </div>
                     </>
@@ -322,8 +306,8 @@ export default function LicensesPage() {
                           </h3>
 
                           <p className="mt-1 text-sm leading-6 text-[#716760]">
-                            برای این دوره هنوز لایسنس فعالی پیدا نشد.
-                            اگر پرداخت شما به‌تازگی تکمیل شده، کمی بعد دوباره بررسی کنید.
+                            برای این دوره هنوز لایسنس فعالی پیدا نشد. اگر پرداخت
+                            شما به‌تازگی تکمیل شده، کمی بعد دوباره بررسی کنید.
                           </p>
                         </div>
                       </div>
